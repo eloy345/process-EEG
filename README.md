@@ -14,23 +14,25 @@ El proyecto incluye:
 
 ## Estructura del repositorio
 
+```text
 proyecto_eeg/
-├── EEG/ ← Datos brutos (NO incluidos en GitHub)
-│ ├── Pre/
-│ └── Post/
-├── results/ ← Señales limpias, métricas, figuras
-├── scripts/ ← Scripts de carga, filtrado, análisis
-│ └── cargar_datos.py
-├── utils/ ← Funciones auxiliares reutilizables
-│ └── helpers.py
-├── notebooks/ ← Notebooks de prueba o visualización
-│ └── prueba.ipynb
-├── df_master/ ← DataFrame con metadatos y rutas de EEG
-│ └── df_master.csv
-├── main.py ← Script principal del flujo completo
-├── requirements.txt ← Librerías necesarias
-├── .gitignore ← Archivos/carpetas excluidas del repo
-└── README.md ← Este archivo
+├── EEG/                   ← Datos brutos (NO incluidos en GitHub)
+│   ├── Pre/
+│   └── Post/
+├── results/               ← Señales limpias, métricas, figuras
+├── scripts/               ← Scripts de carga, filtrado, análisis
+│   └── cargar_datos.py
+├── utils/                 ← Funciones auxiliares reutilizables
+│   └── helpers.py
+├── notebooks/             ← Notebooks de prueba o visualización
+│   └── prueba.ipynb
+├── df_master/             ← DataFrame con metadatos y rutas de EEG
+│   └── df_master.csv
+├── main.py                ← Script principal del flujo completo
+├── requirements.txt       ← Librerías necesarias
+├── .gitignore             ← Archivos/carpetas excluidas del repo
+└── README.md              ← Este archivo
+
 ---
 
 ## Tecnologías utilizadas
