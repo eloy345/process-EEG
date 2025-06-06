@@ -33,6 +33,7 @@ proyecto_eeg/
 ├── .gitignore             ← Archivos/carpetas excluidas del repo
 └── README.md              ← Este archivo
 
+```
 ---
 
 ## Tecnologías utilizadas
