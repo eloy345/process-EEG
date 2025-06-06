@@ -7,7 +7,7 @@ El proyecto incluye:
 - Procesamiento de señales EEG pre y post intervención.
 - Análisis de atención mediante tareas cognitivas con Vigilance Buddy.
 - Comparaciones entre grupos (AACC vs no AACC) y condiciones (Pre/Post).
-- Extracción de métricas como PSD (potencia espectral) y medidas atencionales.
+- Extracción de métricas EEG y medidas atencionales.
 - Organización automatizada de datos y generación de visualizaciones.
 
 ---
