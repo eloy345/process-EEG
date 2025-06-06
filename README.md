@@ -15,21 +15,22 @@ El proyecto incluye:
 ## Estructura del repositorio
 
 proyecto_eeg/
-├── EEG/ # Datos brutos (NO incluidos en GitHub)
-├── results/ # Señales limpias, métricas, figuras
-├── scripts/ # Scripts de carga, filtrado, análisis
-├── utils/ # Funciones auxiliares reutilizables
-├── notebooks/ # Notebooks de prueba o visualización
-├── df_master/ # DataFrame con metadatos y rutas de EEG
-├── main.py # Script principal del flujo completo
-├── requirements.txt # Librerías necesarias
-├── .gitignore # Archivos/carpetas excluidas del repo
-└── README.md # Este archivo
-
-yaml
-Copiar
-Editar
-
+├── EEG/ ← Datos brutos (NO incluidos en GitHub)
+│ ├── Pre/
+│ └── Post/
+├── results/ ← Señales limpias, métricas, figuras
+├── scripts/ ← Scripts de carga, filtrado, análisis
+│ └── cargar_datos.py
+├── utils/ ← Funciones auxiliares reutilizables
+│ └── helpers.py
+├── notebooks/ ← Notebooks de prueba o visualización
+│ └── prueba.ipynb
+├── df_master/ ← DataFrame con metadatos y rutas de EEG
+│ └── df_master.csv
+├── main.py ← Script principal del flujo completo
+├── requirements.txt ← Librerías necesarias
+├── .gitignore ← Archivos/carpetas excluidas del repo
+└── README.md ← Este archivo
 ---
 
 ## Tecnologías utilizadas
@@ -42,36 +43,6 @@ Editar
 
 ---
 
-## Cómo empezar
-
-1. Clona este repositorio:
-   ```bash
-   git clone https://github.com/eloy345/process-EEG.git
-   cd process-EEG
-Instala los requisitos:
-
-bash
-Copiar
-Editar
-pip install -r requirements.txt
-Ejecuta el proyecto:
-
-bash
-Copiar
-Editar
-python main.py
-🧪 Estado actual
- Estructura básica creada
-
- Sistema de carpetas implementado
-
- Lectura de EEG desde CSV
-
- Filtros y preprocesado
-
- Extracción de métricas
-
- Comparación de condiciones
 
 📬 Contacto
 Eloy García-Pérez
