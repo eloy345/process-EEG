@@ -1,10 +1,10 @@
 # Proyecto EEG – Análisis de señales neurofisiológicas en escolares
 
 Este repositorio contiene el código y la estructura de trabajo del proyecto de tesis doctoral:  
-**"Impacto de la actividad física sobre el rendimiento cognitivo en alumnado de educación primaria, con especial atención a estudiantes con altas capacidades"**.
+**"Impacto de la actividad física sobre el rendimiento cognitivo en alumnado con altas capacidades"**.
 
 El proyecto incluye:
-- Procesamiento de señales EEG pre y post intervención.
+- Procesamiento de señales EEG pre y post intervención de actividad física.
 - Análisis de atención mediante tareas cognitivas con Vigilance Buddy.
 - Comparaciones entre grupos (AACC vs no AACC) y condiciones (Pre/Post).
 - Extracción de métricas EEG y medidas atencionales.
@@ -38,7 +38,7 @@ proyecto_eeg/
 
 ## Tecnologías utilizadas
 
-- Python 3.11+
+- Python 3.13+
 - [MNE-Python](https://mne.tools) – procesamiento EEG
 - Pandas, NumPy, SciPy
 - Matplotlib, Seaborn, Plotly
