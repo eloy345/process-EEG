@@ -16,7 +16,10 @@ El proyecto incluye:
 
 ```text
 proyecto_eeg/
-├── EEG/                   ← Datos brutos (NO incluidos en GitHub)
+├── EEG_raw/                   ← Datos brutos (NO incluidos en GitHub)
+│   ├── Pre/
+│   └── Post/
+├── EEG_processed/                   ← Datos procesados (NO incluidos en GitHub)
 │   ├── Pre/
 │   └── Post/
 ├── results/               ← Señales limpias, métricas, figuras
