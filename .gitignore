@@ -1,5 +1,6 @@
 # Carpeta de datos brutos
-EEG/
+EEG_raw/
+EEG_processed/
 
 # Resultados generados automáticamente
 results/
