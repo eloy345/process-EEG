@@ -1,0 +1,30 @@
+import os
+import mne
+from cargar_datos import diccionario_datos
+
+ruta_base = "C:/Users/Eloy.GarciaPerez/OneDrive - Universidad de Castilla-La Mancha/Tesis_EEG/proyecto_eeg/EEG_raw"
+archivos = diccionario_datos(ruta_base)
+
+for ruta_relativa, ruta_absoluta in archivos.items():
+    print(f"Procesando: {ruta_relativa}")
+    
+    # Cargar el archivo EDF
+    raw = mne.io.read_raw_edf(ruta_absoluta, preload=True)
+
+    # 🟡 Aquí irán tus pasos de preprocesado (más adelante)
+
+    
+    # Mostrar resumen de info del archivo
+    print(raw.annotations)
+
+    # Visualizar señal EEG
+    raw.plot(n_channels=32, duration=10, scalings='auto')
+
+    # Crear ruta de guardado equivalente en EEG_processed
+    ruta_guardado = os.path.join("EEG_processed", ruta_relativa)
+    ruta_guardado = ruta_guardado.replace(".edf", "-proc.fif")
+    os.makedirs(os.path.dirname(ruta_guardado), exist_ok=True)
+
+    # Guardar como archivo procesado de MNE
+    raw.save(ruta_guardado, overwrite=True)
+    print(f"✅ Guardado en: {ruta_guardado}")
