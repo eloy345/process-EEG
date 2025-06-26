@@ -25,6 +25,7 @@ proyecto_eeg/
 ├── results/               ← Señales limpias, métricas, figuras
 ├── scripts/               ← Scripts de carga, filtrado, análisis
 │   └── cargar_datos.py
+│   └── preprocesado-eeg.py
 ├── utils/                 ← Funciones auxiliares reutilizables
 │   └── helpers.py
 ├── notebooks/             ← Notebooks de prueba o visualización
