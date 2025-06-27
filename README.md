@@ -19,14 +19,14 @@ proyecto_eeg/
 ├── EEG_raw/                   ← Datos brutos (NO incluidos en GitHub)
 │   ├── Pre/
 │   └── Post/
-├── EEG_processed/                   ← Datos procesados (NO incluidos en GitHub)
+├── EEG_preprocessed/                   ← Datos preprocesados (NO incluidos en GitHub)
 │   ├── Pre/
 │   └── Post/
-├── results/               ← Señales limpias, métricas, figuras
-├── scripts/               ← Scripts de carga, filtrado, análisis
+├── results/               ← Resultados
+├── scripts/               ← Scripts de carga, filtrado, análisis, ML...
 │   └── cargar_datos.py
 │   └── preprocesado-eeg.py
-├── utils/                 ← Funciones auxiliares reutilizables
+├── utils/                 ← Funciones auxiliares 
 │   └── helpers.py
 ├── notebooks/             ← Notebooks de prueba o visualización
 │   └── prueba.ipynb
