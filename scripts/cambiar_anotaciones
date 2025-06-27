@@ -1,0 +1,24 @@
+import mne
+
+# Cargar el archivo original
+raw = mne.io.read_raw_edf("C:/Users/Eloy.GarciaPerez/OneDrive - Universidad de Castilla-La Mancha/Tesis_EEG/proyecto_eeg/EEG_raw/PRE/KAIZEN/4/EEG/AGUSTIN/Session01/RecordingS01R000_EDF/aacc.edf", preload=True)  # o .fif
+
+# Crear nuevas anotaciones vacías
+nuevas_anotaciones = mne.Annotations(onset=[], duration=[], description=[])
+
+# Recorremos cada anotación y decidimos qué hacer
+for onset, duration, desc in zip(raw.annotations.onset, raw.annotations.duration, raw.annotations.description):
+    if desc == "userMarker_3" or desc == "userMarker_4":
+        continue  # ❌ eliminar estas
+    elif desc == "userMarker_5":
+        nuevas_anotaciones.append(onset, duration, "userMarker_3")  # ✅ cambiar nombre
+    elif desc == "userMarker_6":
+        nuevas_anotaciones.append(onset, duration, "userMarker_4")  # ✅ cambiar nombre
+    else:
+        nuevas_anotaciones.append(onset, duration, desc)  # mantener el resto igual
+
+# Aplicar las anotaciones nuevas al raw
+raw.set_annotations(nuevas_anotaciones)
+
+# Guardar el resultado
+raw.save("aacc.edf", overwrite=True)
