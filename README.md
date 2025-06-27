@@ -54,4 +54,4 @@ proyecto_eeg/
 📬 Contacto
 Eloy García-Pérez
 Doctorando – Universidad de Castilla-La Mancha
-Email: tu_email@uclm.es
+Email: eloy.garciaperez@uclm.es
