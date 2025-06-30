@@ -1,3 +1,5 @@
+# Compara si todos los edf están en fif
+
 import os
 
 def contar_edf(ruta_base):
