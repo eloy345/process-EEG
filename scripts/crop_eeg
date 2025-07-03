@@ -1,10 +1,10 @@
 import os
 import mne
 import csv
-from cargar_datos import diccionario_datos
+from cargar_datos_raw import diccionario_datos
 
 ruta_base = "EEG_raw"
-salida_base = "EEG_processed"
+salida_base = "EEG_crop"
 
 rutas = diccionario_datos(ruta_base)
 
