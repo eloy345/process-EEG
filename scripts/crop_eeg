@@ -15,6 +15,20 @@ for ruta_relativa, ruta_absoluta in rutas.items():
 
     try:
         raw = mne.io.read_raw_edf(ruta_absoluta, preload=True)
+        # Renombrar canales tipo 'eeg_Fz' → 'Fz'
+        rename_dict = {ch: ch.replace('eeg_', '') for ch in raw.ch_names if ch.startswith('eeg_')}
+        raw.rename_channels(rename_dict)
+
+        # Marcar canales no EEG como tipo 'misc' o 'stim'
+        canales_no_eeg = ['mask_eeg', 'mask_imu'] + [f'imu_{i}' for i in range(1, 10)]
+        canales_en_raw = set(raw.ch_names)
+        canales_validos = list(set(canales_no_eeg) & canales_en_raw)
+
+        if canales_validos:
+            raw.set_channel_types({canal: 'misc' for canal in canales_validos})
+        # Aplicar el montage estándar
+        raw.set_montage('standard_1020', on_missing='ignore')
+
     except Exception as e:
         print(f"❌ Error al cargar {ruta_relativa}: {e}")
         saltados.append((ruta_relativa, f"Error al abrir: {e}"))

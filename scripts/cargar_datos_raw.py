@@ -100,3 +100,5 @@ def diccionario_datos_procesados_por_tipo(ruta_base: str, tipo: str) -> Dict[str
                                         ruta_relativa = os.path.relpath(ruta_absoluta, ruta_base)
                                         archivos_filtrados[ruta_relativa] = ruta_absoluta
     return archivos_filtrados
+
+
