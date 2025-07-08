@@ -1,0 +1,91 @@
+import os
+import mne
+import csv
+from cargar_datos_raw import diccionario_datos
+
+ruta_base = "EEG_raw"
+salida_base = "EEG_crop"
+
+rutas = diccionario_datos(ruta_base)
+
+saltados = []
+
+for ruta_relativa, ruta_absoluta in rutas.items():
+    print(f"\nProcesando: {ruta_relativa}")
+
+    try:
+        raw = mne.io.read_raw_edf(ruta_absoluta, preload=True)
+        # Renombrar canales tipo 'eeg_Fz' → 'Fz'
+        rename_dict = {ch: ch.replace('eeg_', '') for ch in raw.ch_names if ch.startswith('eeg_')}
+        raw.rename_channels(rename_dict)
+
+        # Marcar canales no EEG como tipo 'misc' o 'stim'
+        canales_no_eeg = ['mask_eeg', 'mask_imu'] + [f'imu_{i}' for i in range(1, 10)]
+        canales_en_raw = set(raw.ch_names)
+        canales_validos = list(set(canales_no_eeg) & canales_en_raw)
+
+        if canales_validos:
+            raw.set_channel_types({canal: 'misc' for canal in canales_validos})
+        # Aplicar el montage estándar
+        raw.set_montage('standard_1020', on_missing='ignore')
+
+    except Exception as e:
+        print(f"❌ Error al cargar {ruta_relativa}: {e}")
+        saltados.append((ruta_relativa, f"Error al abrir: {e}"))
+        continue
+
+    anotaciones = raw.annotations
+    descripciones = list(anotaciones.description)
+
+    if "userMarker_5" in descripciones:
+        print(f"❌ Saltado (tiene userMarker_5): {ruta_relativa}")
+        saltados.append((ruta_relativa, "Contiene userMarker_5"))
+        continue
+
+    try:
+        t1 = anotaciones.onset[descripciones.index("userMarker_1")]
+        t2 = anotaciones.onset[descripciones.index("userMarker_2")]
+        t3 = anotaciones.onset[descripciones.index("userMarker_3")]
+
+        t4_propuesto = t3 + 420.0
+        duracion_total = raw.times[-1]
+
+        if t4_propuesto <= duracion_total:
+            t4 = t4_propuesto
+        else:
+            if "userMarker_4" in descripciones:
+                t4 = anotaciones.onset[descripciones.index("userMarker_4")]
+                print(f"⚠️ {ruta_relativa} - 7 minutos no disponibles, usando userMarker_4 como t4")
+            else:
+                print(f"❌ {ruta_relativa} - No hay suficientes datos ni userMarker_4, se omite")
+                saltados.append((ruta_relativa, "No hay t4 válido (ni 7 min ni userMarker_4)"))
+                continue
+
+    except ValueError as e:
+        print(f"❌ Faltan marcadores clave en: {ruta_relativa} → {e}")
+        saltados.append((ruta_relativa, str(e)))
+        continue
+
+    # Recortar segmento basal
+    raw_basal = raw.copy().crop(tmin=t1, tmax=t2)
+    # Recortar segmento de prueba
+    raw_prueba = raw.copy().crop(tmin=t3, tmax=t4)
+
+    # Construir rutas de guardado
+    ruta_salida_basal = os.path.join(salida_base, os.path.dirname(ruta_relativa), "aacc_basal.fif")
+    ruta_salida_vb = os.path.join(salida_base, os.path.dirname(ruta_relativa), "aacc_vb.fif")
+
+    os.makedirs(os.path.dirname(ruta_salida_basal), exist_ok=True)
+
+    raw_basal.save(ruta_salida_basal, overwrite=True)
+    raw_prueba.save(ruta_salida_vb, overwrite=True)
+
+    print(f"✅ Guardado: {ruta_salida_basal} y {ruta_salida_vb}")
+
+# Guardar CSV con archivos saltados
+with open("archivos_saltados.csv", "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerow(["Ruta relativa", "Motivo"])
+    writer.writerows(saltados)
+
+print("\n📄 Archivo 'archivos_saltados.csv' generado con los casos omitidos.")
