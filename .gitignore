@@ -19,7 +19,11 @@ __pycache__/
 .DS_Store
 .vscode/
 
-#Archivos csv
+#Archivos 
+*.edf
+*.fif
+*.mat
+*.npy
 *.csv
 
 
