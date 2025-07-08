@@ -1,0 +1,25 @@
+import os
+from cargar_datos_raw import diccionario_datos_procesados_por_tipo
+from preprocesado_eeg import preprocesado_bandas
+
+# Rutas principales
+ruta_crop = "EEG_crop"
+ruta_raw = "EEG_raw"
+ruta_guardado = "EEG_processed_bandas"
+
+# Obtener todas las rutas a archivos 'aacc_basal.fif'
+diccionario_basal = diccionario_datos_procesados_por_tipo(ruta_crop, tipo="basal")
+
+print(f"Total señales encontradas: {len(diccionario_basal)}")
+
+# Aplicar preprocesado a cada señal
+for ruta_relativa, ruta_absoluta in diccionario_basal.items():
+    try:
+        preprocesado_bandas(
+            ruta_fif=ruta_absoluta,
+            ruta_base_crop=ruta_crop,
+            ruta_base_guardado=ruta_guardado,
+            ruta_base_raw=ruta_raw  # Solo si tu función lo necesita
+        )
+    except Exception as e:
+        print(f"❌ Error en {ruta_relativa}: {e}")
