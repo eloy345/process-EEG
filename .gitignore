@@ -18,3 +18,9 @@ __pycache__/
 # Archivos de sistema o de VS Code
 .DS_Store
 .vscode/
+
+#Archivos csv
+*.csv
+
+
+
