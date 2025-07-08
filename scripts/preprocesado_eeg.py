@@ -4,104 +4,47 @@ from cargar_datos_raw import diccionario_datos_procesados_por_tipo
 from mne.preprocessing import annotate_muscle_zscore
 import pandas as pd
 
-
-ruta_base = "C:/Users/Eloy.GarciaPerez/OneDrive - Universidad de Castilla-La Mancha/Tesis_EEG/proyecto_eeg/EEG_crop"
-archivos = diccionario_datos_procesados_por_tipo(ruta_base, "basal")
-
 # PREPROCESADO PARA ANÁLISIS EN POTENCIALES EVOCADOS
 
 # PREPROCESADO PARA ANÁLISIS EN BANDAS DE FRECUENCIA
 
 
-ruta_base_crop = "C:/Users/Eloy/.../EEG_crop"
-ruta_base_guardado = "C:/Users/Eloy/.../EEG_PROCESSED_BANDAS"
-ruta_base_raw="C:/Users/Eloy.GarciaPerez/OneDrive - Universidad de Castilla-La Mancha/Tesis_EEG/proyecto_eeg/EEG_raw"
-
-def preprocesado_bandas(ruta_fif, ruta_base_crop, ruta_base_guardado, ruta_base_raw, umbral_rojo=0.3):
+def preprocesado_bandas(ruta_fif, ruta_base_crop, ruta_base_guardado):
     """
-    Preprocesado para análisis de bandas de frecuencia con detección de canales malos según calidad:
-    - Busca y recorta el archivo AACC_QUALITY.csv
-    - Detecta canales malos (> umbral_rojo de muestras en rojo)
-    - Filtrado 1-40 Hz + notch 50 Hz
-    - Anotación de artefactos musculares
-    - Interpolación de canales malos
-    - SSP (1 componente)
+    Preprocesado simplificado para análisis de bandas de frecuencia:
+    - Filtrado 1–40 Hz
+    - Filtro notch 50 Hz
+    - Detección de artefactos musculares
+    - Proyecciones SSP (1 componente)
     - Referencia promedio
-    - Guardado en EEG_processed_bandas
+    - Guardado estructurado
     """
     print(f"🧪 Procesando: {ruta_fif}")
     raw = mne.io.read_raw_fif(ruta_fif, preload=True)
 
-    # === Paso 0: Buscar ruta original de EEG_raw (para edf y CSV) ===
-    rel_path = os.path.relpath(os.path.dirname(ruta_fif), ruta_base_crop)
-    ruta_edf = os.path.join(ruta_base_raw, rel_path, "aacc.edf")
-    ruta_csv = os.path.join(ruta_base_raw, rel_path, "AACC_QUALITY.csv")
-
-    # === Paso 1: Detectar canales malos según AACC_QUALITY ===
-    try:
-        raw_edf = mne.io.read_raw_edf(ruta_edf, preload=False)
-        anot = raw_edf.annotations
-        t1 = anot.onset[list(anot.description).index("userMarker_1")]
-        t2 = anot.onset[list(anot.description).index("userMarker_2")]
-    except Exception as e:
-        print(f"⚠️ No se pudo procesar calidad (fallo al leer .edf o marcadores): {e}")
-        t1, t2 = None, None
-
-    if t1 is not None and t2 is not None:
-        try:
-            sfreq = raw_edf.info["sfreq"]
-            df = pd.read_csv(ruta_csv)
-            df_recorte = df.iloc[int(t1 * sfreq):int(t2 * sfreq)]
-
-            canales_malos = []
-            for canal in raw.ch_names:
-                if canal in df_recorte.columns:
-                    n_total = len(df_recorte[canal])
-                    n_rojo = (df_recorte[canal] == 3).sum()
-                    if n_rojo / n_total > umbral_rojo:
-                        canales_malos.append(canal)
-
-            raw.info["bads"] = canales_malos
-            print(f"❗Canales marcados como malos (por calidad): {canales_malos}")
-        except Exception as e:
-            print(f"⚠️ No se pudo usar el archivo de calidad: {e}")
-    else:
-        print("⚠️ No se aplicó análisis de calidad por fallo en marcadores")
-
-    # === Paso 2: Filtrado ===
+    # === 1. Filtrado banda 1–40 Hz + notch 50 Hz
     raw.filter(l_freq=1.0, h_freq=40.0, fir_design='firwin')
     raw.notch_filter(freqs=50)
 
-    # === Paso 3: Artefactos musculares ===
+    # === 2. Artefactos musculares
     anotaciones, _ = annotate_muscle_zscore(raw, threshold=5.0, ch_type='eeg')
     raw.set_annotations(anotaciones)
     raw = raw.copy().annotate_bad_segments()
 
-    # === Paso 4: Interpolación ===
-    raw.interpolate_bads(reset_bads=True)
-
-    # === Paso 5: SSP ===
+    # === 3. Proyecciones SSP
     projs, _ = mne.preprocessing.compute_proj_raw(raw, n_grad=0, n_mag=0, n_eeg=1)
     raw.add_proj(projs)
     raw.apply_proj()
 
-    # === Paso 6: Referencia promedio ===
+    # === 4. Referencia promedio
     raw.set_eeg_reference('average', projection=False)
 
-    # === Paso 7: Guardado ===
-    ruta_guardado = os.path.join(ruta_base_guardado, os.path.relpath(ruta_fif, ruta_base_crop))
+    # === 5. Guardado
+    ruta_relativa = os.path.relpath(ruta_fif, ruta_base_crop)
+    ruta_guardado = os.path.join(ruta_base_guardado, ruta_relativa)
     os.makedirs(os.path.dirname(ruta_guardado), exist_ok=True)
     raw.save(ruta_guardado, overwrite=True)
     print(f"✅ Guardado en: {ruta_guardado}")
-    
-    
-for root, _, files in os.walk(ruta_base_crop):
-    for file in files:
-        if file.endswith(".fif"):
-            ruta_fif = os.path.join(root, file)
-            preprocesado_bandas(ruta_fif, ruta_base_crop, ruta_base_guardado)
-
-
 
 def preprocesado_erps(ruta_fif, ruta_base_crop, ruta_base_guardado):
     """
