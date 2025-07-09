@@ -82,7 +82,7 @@ for ruta_relativa, ruta_absoluta in rutas.items():
             ts1 = int(df_marker[df_marker["value1"] == 1]["timestamp"].values[0])
             ts2 = int(df_marker[df_marker["value1"] == 2]["timestamp"].values[0])
             ts3 = int(df_marker[df_marker["value1"] == 3]["timestamp"].values[0])
-            ts4 = int(df_marker[df_marker["value1"] == 4]["timestamp"].values[0]) if 4 in df_marker["value1"].values else int(ts3 + 420 * 1e6)
+            ts4 = int(df_marker[df_marker["value1"] == 4]["timestamp"].values[0]) if 4 in df_marker["value1"].values else int(ts3 + 420 * 1e7)
 
             i1 = buscar_fila_mas_cercana(df_quality, ts1)
             i2 = buscar_fila_mas_cercana(df_quality, ts2)

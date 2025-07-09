@@ -2,6 +2,7 @@
 EEG_raw/
 EEG_processed/
 EEG_crop/
+EEG_processed_bandas/
 
 # Resultados generados automáticamente
 results/
