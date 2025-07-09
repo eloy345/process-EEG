@@ -75,8 +75,6 @@ def diccionario_datos_procesados_por_tipo(ruta_base: str, tipo: str) -> Dict[str
                     continue
 
                 for carpeta in os.listdir(ruta_curso):
-                    if carpeta.lower() != "eeg_processed":
-                        continue
 
                     ruta_eeg = os.path.join(ruta_curso, carpeta)
                     for sujeto in os.listdir(ruta_eeg):
