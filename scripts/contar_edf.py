@@ -1,27 +1,34 @@
 import os
+import pandas as pd
 
-def contar_edf_en_subcarpeta(ruta_subcarpeta):
-    total = 0
+def contar_edf_y_guardar_lista(ruta_subcarpeta, etiqueta):
+    rutas_relativas = []
     for root, _, files in os.walk(ruta_subcarpeta):
-        total += sum(1 for file in files if file.lower().endswith('.fif'))
-    return total
+        for file in files:
+            if file.lower().endswith('.edf'):
+                ruta_rel = os.path.relpath(os.path.join(root, file), start=ruta_subcarpeta)
+                rutas_relativas.append(os.path.join(etiqueta, ruta_rel).replace("\\", "/"))
+    return rutas_relativas
 
 # Rutas base
-base_raw = "EEG_crop"
+base_raw = "EEG_raw"
 ruta_pre = os.path.join(base_raw, "PRE")
 ruta_post = os.path.join(base_raw, "POST")
 
+# Recoger rutas relativas
+rutas_pre = contar_edf_y_guardar_lista(ruta_pre, "PRE")
+rutas_post = contar_edf_y_guardar_lista(ruta_post, "POST")
+
 # Contar
-total_pre = contar_edf_en_subcarpeta(ruta_pre)
-total_post = contar_edf_en_subcarpeta(ruta_post)
+print(f"📂 Archivos .edf encontrados:")
+print(f"  ▶ PRE:  {len(rutas_pre)}")
+print(f"  ▶ POST: {len(rutas_post)}")
+print(f"📊 Diferencia (POST - PRE): {len(rutas_post) - len(rutas_pre)}")
 
-# Mostrar resultados
-print(f"📂 Archivos .fif encontrados:")
-print(f"  ▶ PRE:  {total_pre}")
-print(f"  ▶ POST: {total_post}")
-print(f"📊 Diferencia (POST - PRE): {total_post - total_pre}")
-
-
+# Guardar en CSV
+df = pd.DataFrame(rutas_pre + rutas_post, columns=["ruta_relativa"])
+df.to_csv("archivos_edf_detectados.csv", index=False, encoding="utf-8")
+print("✅ CSV guardado como 'archivos_edf_detectados.csv'")
 
 import os
 import pandas as pd
