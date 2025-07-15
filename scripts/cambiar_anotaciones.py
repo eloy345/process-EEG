@@ -103,13 +103,11 @@ if os.path.exists(ruta_quality) and os.path.exists(ruta_usermarker):
         df_resumen.to_csv(resumen_path, index=False)
         print("✅ Canal malos guardados en resumen_malos.csv")
 
-# === Guardado final ===
+# Guardado final 
 rel_path = os.path.relpath(os.path.dirname(ruta_edf), ruta_base_raw)
 ruta_salida_basal = os.path.join(ruta_base_proc, rel_path, "aacc_basal.fif")
 ruta_salida_vb = os.path.join(ruta_base_proc, rel_path, "aacc_vb.fif")
 os.makedirs(os.path.dirname(ruta_salida_basal), exist_ok=True)
-
 raw_basal.save(ruta_salida_basal, overwrite=True)
 raw_vb.save(ruta_salida_vb, overwrite=True)
 print(f"✅ Guardado:\n- {ruta_salida_basal}\n- {ruta_salida_vb}")
-
