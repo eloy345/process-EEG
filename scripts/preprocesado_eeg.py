@@ -43,12 +43,28 @@ def preprocesado_bandas(ruta_fif, ruta_base_crop, ruta_base_guardado):
     raw.set_eeg_reference('average', projection=False)
 
     # 6. Guardado
-    ruta_relativa = os.path.relpath(ruta_fif, ruta_base_crop) #para quedarme con la parte de despues de EEG_crop
-    ruta_guardado = os.path.join(ruta_base_guardado, ruta_relativa) #ruta base guardado será EEG_processed_freq
-    os.makedirs(os.path.dirname(ruta_guardado), exist_ok=True) #para crear las carpetas
-    raw.save(ruta_guardado, overwrite=True) #guardar 
-    print(f"✅ Guardado en: {ruta_guardado}")
+    rutas = ruta_fif.split(os.sep)
 
+    try:
+        colegio = rutas[2]      # Colegio (extraído de la ruta)
+        curso = rutas[3]        # Curso
+        iniciales = rutas[5]    # Inciales
+        postpre=rutas[1]
+    except IndexError:
+        raise ValueError("Ruta inesperada: no se pudo extraer colegio, curso e iniciales")
+
+    carpeta_final = f"{iniciales}_{colegio}_{curso}"
+    ruta_guardado = os.path.join(ruta_base_guardado, postpre, carpeta_final, os.path.basename(ruta_fif))
+    os.makedirs(os.path.dirname(ruta_guardado), exist_ok=True)
+
+    # === 4. Guardar
+    raw.save(ruta_guardado, overwrite=True)
+    print(f"✅ Guardado en: {ruta_guardado}")
+    
+    
+    
+    
+    
 # PREPROCESADO PARA ANÁLISIS EN POTENCIALES EVOCADOS
 
 def preprocesado_erps(ruta_fif, ruta_base_crop, ruta_base_guardado):
