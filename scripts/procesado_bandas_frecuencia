@@ -119,4 +119,6 @@ for nombre_banda, lista_df in df_resultados.items():
 
 df_meta = pd.DataFrame(meta_info).set_index("ID")
 df_meta["y"] = df_meta["AACC"].apply(lambda x: 1 if str(x) == "SI" else 0)
+df_meta["y_recommended"] = df_meta["AACC"].apply(lambda x: 1 if pd.notna(x) and str(x).strip() != "" else 0)
+
 df_meta.to_csv(f"{ruta_guardado}/meta.csv")
