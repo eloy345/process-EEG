@@ -1,0 +1,122 @@
+import os
+import numpy as np
+import pandas as pd
+import mne
+from scipy import signal
+from tqdm import tqdm
+from pathlib import Path
+
+# 1. Función para extraer todas las características
+def extraer_caracteristicas(df, sfreq=256):
+    canales_esperados = [
+    "Fp1", "Fpz", "Fp2", "AF3", "AF4", "F7", "F3", "Fz", "F4", "F8",
+    "FC5", "FC1", "FC2", "FC6", "T7", "C3", "Cz", "C4", "T8",
+    "CP5", "CP1", "CP2", "CP6", "P7", "P3", "Pz", "P4", "P8",
+    "POz", "O1", "Oz", "O2"
+    ]
+
+    canales_presentes = [ch for ch in canales_esperados if ch in df.columns]
+    df = df[canales_presentes]
+    D1 = df.diff().fillna(0)
+    D2 = D1.diff().fillna(0)
+    media, std = df.mean(), df.std()
+    maximo, minimo = df.max(), df.min()
+    RD = maximo - minimo
+    MD1, STDD1 = D1.mean(), D1.std()
+    MD2, STDD2 = D2.mean(), D2.std()
+    AL, RM, INT = [], [], []
+    for ch in canales_presentes:
+        x = df[ch].values
+        al = np.sum(np.sqrt(1 + np.diff(x)**2)) / len(x)
+        ap = np.sum(np.abs(x)**2) / len(x)
+        rm = np.sqrt(ap)
+        integ = np.sum(np.abs(x)) / len(x)
+        AL.append(al)
+        RM.append(rm)
+        INT.append(integ)
+    AL = pd.Series(AL, index=canales_presentes)
+    RM = pd.Series(RM, index=canales_presentes)
+    INT = pd.Series(INT, index=canales_presentes)
+    IL = media / AL
+    EL = RM / AL
+    skewness = df.skew()
+    kurtosis = df.kurt()
+
+    return pd.concat([
+        media.add_suffix('_mean'),
+        std.add_suffix('_std'),
+        maximo.add_suffix('_max'),
+        minimo.add_suffix('_min'),
+        RD.add_suffix('_range'),
+        MD1.add_suffix('_d1_mean'),
+        STDD1.add_suffix('_d1_std'),
+        MD2.add_suffix('_d2_mean'),
+        STDD2.add_suffix('_d2_std'),
+        AL.rename(lambda ch: f"{ch}_arc_len"),
+        RM.rename(lambda ch: f"{ch}_rms"),
+        IL.rename(lambda ch: f"{ch}_area_perim"),
+        EL.rename(lambda ch: f"{ch}_energy_perim"),
+        INT.rename(lambda ch: f"{ch}_integral"),
+        skewness.rename(lambda ch: f"{ch}_skew"),
+        kurtosis.rename(lambda ch: f"{ch}_kurt"),
+    ])
+
+# 2. Cargar y filtrar por banda
+def cargar_y_filtrar(path_fif, l_freq, h_freq):
+    raw = mne.io.read_raw_fif(path_fif, preload=True, verbose=False)
+    raw.pick("eeg")
+    raw.filter(l_freq=l_freq, h_freq=h_freq, fir_design='firwin', verbose=False)
+    data, _ = raw[:]
+    return pd.DataFrame(data.T, columns=raw.ch_names)
+
+# 3. Configuraciones
+bandas = {
+    "full": (1, 40),
+    "delta": (1, 4),
+    "theta": (4, 8),
+    "alpha": (8, 13),
+    "beta": (13, 30),
+    "gamma": (30, 40)
+}
+
+ruta_base = "EEG_processed_bandas/PRE"
+ruta_excel = "Experimento_EEG.xlsx"
+ruta_guardado = "df_EEG/PRE"
+Path(ruta_guardado).mkdir(parents=True, exist_ok=True)
+
+# 4. Cargar Excel y preparar metadatos
+df_excel = pd.read_excel(ruta_excel)
+df_excel["ID"] = df_excel["INICIALES"].astype(str) + "_" + df_excel["CENTRO_ESCOLAR"].astype(str) + "_" + df_excel["NIVEL_EDUCATIVO"].astype(str)
+df_excel = df_excel.set_index("ID")
+df_resultados = {banda: [] for banda in bandas}
+meta_info = []
+
+# 5. Recorrer carpetas y procesar archivos
+for carpeta in tqdm(sorted(os.listdir(ruta_base))):
+    ruta_carpeta = os.path.join(ruta_base, carpeta)
+    if not os.path.isdir(ruta_carpeta):
+        continue
+    ruta_fif = os.path.join(ruta_carpeta, "aacc_basal.fif")
+    if not os.path.exists(ruta_fif):
+        continue
+    for nombre_banda, (lf, hf) in bandas.items():
+        try:
+            df_raw = cargar_y_filtrar(ruta_fif, lf, hf)
+            features = extraer_caracteristicas(df_raw)
+            features["ID"] = carpeta
+            df_resultados[nombre_banda].append(features)
+        except Exception as e:
+            print(f"❌ Error en {carpeta} - {nombre_banda}: {e}")
+    if carpeta in df_excel.index:
+        info = df_excel.loc[carpeta].to_dict()
+        info["ID"] = carpeta
+        meta_info.append(info)
+
+# 6. Guardar resultados
+for nombre_banda, lista_df in df_resultados.items():
+    df_final = pd.DataFrame(lista_df).set_index("ID")
+    df_final.to_csv(f"{ruta_guardado}/X_{nombre_banda}.csv")
+
+df_meta = pd.DataFrame(meta_info).set_index("ID")
+df_meta["y"] = df_meta["AACC"].apply(lambda x: 1 if str(x) == "SI" else 0)
+df_meta.to_csv(f"{ruta_guardado}/meta.csv")
