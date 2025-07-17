@@ -72,10 +72,6 @@ def extraer_caracteristicas(df, sfreq=256):
 
     ])
 
-from scipy.signal import welch
-
-
-
 
 # 2. Cargar y filtrar por banda
 def cargar_y_filtrar(path_fif, l_freq, h_freq):
@@ -138,3 +134,15 @@ df_meta["y"] = df_meta["AACC"].apply(lambda x: 1 if str(x) == "SI" else 0)
 df_meta["y_recommended"] = df_meta["AACC"].apply(lambda x: 1 if pd.notna(x) and str(x).strip() != "" else 0)
 
 df_meta.to_csv(f"{ruta_guardado}/meta.csv")
+
+#Comporbar cuantos estan en el excel 
+ids_excel = set(df_excel.index)
+ids_folders = {d for d in os.listdir(ruta_base) if os.path.isdir(os.path.join(ruta_base, d))}
+
+faltan = sorted(ids_folders - ids_excel)
+if faltan:
+    print("🟥 Las siguientes carpetas no están en el Excel:")
+    for f in faltan:
+        print("   -", f)
+else:
+    print("✅ Todos los IDs están en el Excel.")
