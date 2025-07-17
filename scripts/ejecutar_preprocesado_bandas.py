@@ -10,7 +10,7 @@ ruta_base_guardado = "EEG_processed_bandas"
 
 
 # Cargar las rutas de señales tipo basal
-archivos = diccionario_datos_procesados_por_tipo(ruta_base_crop, "basal") #ejecutar con basal y vb
+archivos = diccionario_datos_procesados_por_tipo(ruta_base_crop, "vb") #ejecutar con basal y vb
 
 
 print(f"📁 Buscando señales en: {os.path.abspath(ruta_base_crop)}")

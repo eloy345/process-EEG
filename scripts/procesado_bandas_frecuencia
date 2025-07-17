@@ -41,6 +41,14 @@ def extraer_caracteristicas(df, sfreq=256):
     EL = RM / AL
     skewness = df.skew()
     kurtosis = df.kurt()
+    
+    canales_presentes = df.columns
+    potencia_abs = {}
+    for ch in canales_presentes:
+        freqs, psd = signal.welch(df[ch].values, fs=sfreq, nperseg=sfreq*2)
+        potencia_abs[ch] = np.trapezoid(psd, freqs)
+    potencia_abs = pd.Series(potencia_abs)
+    potencia_rel = potencia_abs / potencia_abs.sum()   #porcentaje de lo que aporta cada canal al total de la potencia
 
     return pd.concat([
         media.add_suffix('_mean'),
@@ -59,7 +67,15 @@ def extraer_caracteristicas(df, sfreq=256):
         INT.rename(lambda ch: f"{ch}_integral"),
         skewness.rename(lambda ch: f"{ch}_skew"),
         kurtosis.rename(lambda ch: f"{ch}_kurt"),
+        potencia_abs.rename(lambda ch: f"{ch}_welch_abs"),
+        potencia_rel.rename(lambda ch: f"{ch}_welch_rel")
+
     ])
+
+from scipy.signal import welch
+
+
+
 
 # 2. Cargar y filtrar por banda
 def cargar_y_filtrar(path_fif, l_freq, h_freq):
