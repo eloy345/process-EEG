@@ -26,6 +26,8 @@ __pycache__/
 *.mat
 *.npy
 *.csv
+*.xlsx
+
 
 
 

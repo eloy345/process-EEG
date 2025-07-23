@@ -67,7 +67,7 @@ for nombre, (modelo, grid_params) in modelos.items():
     pipeline = Pipeline([
         ("clf", modelo)
     ])
-    grid = GridSearchCV(pipeline, param_grid=grid_params, cv=skf, scoring='f1', n_jobs=-1)
+    grid = GridSearchCV(pipeline, param_grid=grid_params, cv=skf, scoring='f1_macro', n_jobs=-1)
     grid.fit(X_pca, y)
     
     print("🔹 Mejor F1 (val cruzada):", grid.best_score_)
