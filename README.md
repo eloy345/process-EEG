@@ -16,12 +16,19 @@ El proyecto incluye:
 
 ```text
 proyecto_eeg/
-├── EEG_raw/                   ← Datos brutos (NO incluidos en GitHub)
+├── EEG_raw/                   ← Datos brutos edf (NO incluidos en GitHub)
 │   ├── Pre/
 │   └── Post/
-├── EEG_preprocessed/                   ← Datos preprocesados (NO incluidos en GitHub)
+├── EEG_crop/                   ← Datos cortados .fif (NO incluidos en GitHub)
 │   ├── Pre/
-│   └── Post/
+│   └── Post/ 
+├── EEG_processed_bandas/                   ← Datos preprocesados .fif (NO incluidos en GitHub)
+│   ├── Pre/
+│   └── Post/ 
+├── df_EEG/             ← DataFrames con metadatos y features de EEG
+│   └── X_gamma_.csv
+│   └── X_full_.csv
+│   └── ...
 ├── results/               ← Resultados
 ├── scripts/               ← Scripts de carga, filtrado, análisis, ML...
 │   └── cargar_datos.py
@@ -30,8 +37,6 @@ proyecto_eeg/
 │   └── helpers.py
 ├── notebooks/             ← Notebooks de prueba o visualización
 │   └── prueba.ipynb
-├── df_master/             ← DataFrame con metadatos y rutas de EEG
-│   └── df_master.csv
 ├── main.py                ← Script principal del flujo completo
 ├── requirements.txt       ← Librerías necesarias
 ├── .gitignore             ← Archivos/carpetas excluidas del repo
