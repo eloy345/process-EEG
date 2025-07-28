@@ -1,70 +1,80 @@
-import pandas as pd 
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score, GridSearchCV
+import os
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import GroupKFold, cross_val_score, cross_val_predict
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.decomposition import PCA
+from sklearn.pipeline import Pipeline
+from xgboost import XGBClassifier
+from sklearn.metrics import (
+    f1_score, accuracy_score, precision_score, recall_score,
+    roc_auc_score, confusion_matrix, classification_report
+)
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.svm import SVC
-from sklearn.decomposition import PCA
 
-# 1. Cargar datos
-X = pd.read_csv("df_EEG/PRE/X_gamma.csv", index_col=0)
-df_meta = pd.read_csv("df_EEG/PRE/meta.csv", index_col=0)
+# === CONFIG ===
+ARCHIVO = "X_delta_VB.csv"
+CARPETA = "df_EEG/PRE"
+META_PATH = os.path.join(CARPETA, "meta.csv")
+RUTA_X = os.path.join(CARPETA, ARCHIVO)
 
-ids_validos = X.index.intersection(df_meta.index)
-X = X.loc[ids_validos]
-y = df_meta.loc[ids_validos]["y_recommended"]
+# === MEJOR MODELO ===
+modelo = XGBClassifier(
+    colsample_bytree=1.0,
+    learning_rate=0.05,
+    max_depth=5,
+    n_estimators=300,
+    subsample=1.0,
+    eval_metric="logloss"
+)
 
-# 2. Filtrar solo columnas numéricas
-X = X.select_dtypes(include="number")
+# === CARGAR DATOS ===
+meta = pd.read_csv(META_PATH, index_col=0)
+meta.index = meta.index.astype(str)
+df = pd.read_csv(RUTA_X)
+groups = df["ID"].astype(str)
+df = df.drop(columns=["ID", "tipo", "ventana"], errors="ignore")
+y = groups.map(meta["y"])
+mask = y.notna()
+X = df[mask]
+y = y[mask]
+groups = groups[mask]
 
-# 3. Normalizar
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+# === PIPELINE ===
+pipeline = Pipeline([
+    ("scaler", StandardScaler()),
+    ("pca", PCA(n_components=0.9, random_state=42)),
+    ("clf", modelo)
+])
 
-# 4. Aplicar PCA 
-pca = PCA(n_components=0.9, random_state=42)
-X_pca = pca.fit_transform(X_scaled)
-print(f"➡️ PCA redujo de {X.shape[1]} a {X_pca.shape[1]} dimensiones")
+gkf = GroupKFold(n_splits=5)
 
-# 5. GridSearchCV
-param_grid = {
-    'C': [0.1, 0.5, 1, 10, 100],
-    'kernel': ['linear', 'rbf', 'poly'],
-    'gamma': ['scale', 'auto']
-}
-svm = SVC(class_weight='balanced', random_state=42)
-cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+from sklearn.model_selection import cross_validate
 
-grid_search = GridSearchCV(svm, param_grid, scoring='f1_macro', cv=cv, n_jobs=-1, verbose=2)
-grid_search.fit(X_pca, y)
+scores = cross_validate(
+    pipeline, X, y, cv=gkf.split(X, y, groups),
+    scoring=["accuracy", "f1_macro", "precision_macro", "recall_macro", "roc_auc_ovo"],
+    return_estimator=True
+)
+print("\n📊 Resultados de validación cruzada:")
+print(f"{'F1 macro:':<15} {scores['test_f1_macro'].mean():.4f}")
+print(f"{'Accuracy:':<15} {scores['test_accuracy'].mean():.4f}")
+print(f"{'Precision:':<15} {scores['test_precision_macro'].mean():.4f}")
+print(f"{'Recall:':<15} {scores['test_recall_macro'].mean():.4f}")
+print(f"{'ROC AUC (OVO):':<15} {scores['test_roc_auc_ovo'].mean():.4f}")
 
-print("🧪 Mejor combinación de parámetros:", grid_search.best_params_)
-print("✅ Accuracy medio (CV):", grid_search.best_score_)
+# === PREDICCIONES Y MATRIZ DE CONFUSIÓN ===
+y_pred = cross_val_predict(pipeline, X, y, cv=gkf.split(X, y, groups), groups=groups)
 
-# 6. Usar el mejor modelo encontrado
-best_model = grid_search.best_estimator_
+print("\n🔎 Classification Report:")
+print(classification_report(y, y_pred))
 
-# 7. División train/test
-X_train, X_test, y_train, y_test = train_test_split(X_pca, y, test_size=0.2, random_state=42, stratify=y)
-
-# 8. Entrenar con mejor modelo
-best_model.fit(X_train, y_train)
-
-# 9. Validación cruzada con mejor modelo
-scores = cross_val_score(best_model, X_pca, y, cv=cv, scoring='f1_macro')
-print("🎯 F1-score medio (validación cruzada):", scores.mean())
-
-# 10. Evaluar
-y_pred = best_model.predict(X_test)
-print("🔎 Accuracy test:", accuracy_score(y_test, y_pred))
-print(classification_report(y_test, y_pred))
-
-# 11. Matriz de confusión
-cm = confusion_matrix(y_test, y_pred)
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+cm = confusion_matrix(y, y_pred)
+plt.figure(figsize=(6, 5))
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=np.unique(y), yticklabels=np.unique(y))
 plt.title("Matriz de confusión")
-plt.xlabel("Predicción")
+plt.xlabel("Predicho")
 plt.ylabel("Real")
+plt.tight_layout()
 plt.show()
