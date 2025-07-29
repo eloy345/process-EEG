@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 CARPETA = "df_EEG/PRE"
 META_PATH = os.path.join(CARPETA, "meta.csv")
 COLUMNA_Y = "y"
-OUTPUT_CSV = "resultados_grid_search_zonas.csv"
+OUTPUT_CSV = "zonas_y_features_normalizado.csv"
 
 # === ZONAS CEREBRALES ===
 zonas = {
@@ -44,47 +44,37 @@ zonas = {
 
 # === FEATURES AGRUPADAS ===
 grupos_features = {
-    "mean": "_mean",
-    "std": "_std",
-    "max": "_max",
-    "min": "_min",
-    "range": "_range",
-    "d1_mean": "_d1_mean",
-    "d1_std": "_d1_std",
-    "d2_mean": "_d2_mean",
-    "d2_std": "_d2_std",
-    "arc_len": "_arc_len",
-    "rms": "_rms",
-    "area_perim": "_area_perim",
-    "energy_perim": "_energy_perim",
-    "integral": "_integral",
-    "skew": "_skew",
-    "kurt": "_kurt",
-    "welch_abs": "_welch_abs",
-    "welch_rel": "_welch_rel"
-}
-
+{
+    "temp": ["_mean", "_std", "_max",  "_min", "_range"],
+    "diff": ["_d1_mean", "_d1_std", "_d2_mean", "_d2_std"],
+    "form": ["_arc_len", "_integral","_skew",  "_kurt"],
+    "rel":  [ "_rms",  "_area_perim", "_energy_perim"],
+    "energy": ["_welch_abs", "_welch_rel"],
+    
+}}
 
 
 # === DEFINIR MODELOS Y GRIDS ===
 modelos = {
     "lr": (
-        LogisticRegression(class_weight="balanced", max_iter=1000),
+        LogisticRegression(class_weight="balanced", max_iter=1000, random_state=42),
         {
             "clf__C": [0.001, 0.01, 0.1, 1, 10, 100],
-            "clf__penalty": ["l1", "l2"],
+            "clf__penalty": ["l1", "l2"],  # podrías incluir "l1" si usas solver='liblinear'
             "clf__solver": ["liblinear", "saga"]
         }
     ),
     "svm": (
         SVC(kernel="linear", class_weight="balanced", probability=True),
-        {"clf__C": [0.001, 0.01, 0.1, 1, 10, 100]}
+        {
+            "clf__C": [0.001, 0.01, 0.1, 1, 10, 100]
+        }
     ),
     "rf": (
-        RandomForestClassifier(class_weight="balanced"),
+        RandomForestClassifier(class_weight="balanced", random_state=42),
         {
-            "clf__n_estimators": [100, 200, 300],
-            "clf__max_depth": [None, 5, 10],
+            "clf__n_estimators": [100, 200, 300, 400, 500],
+            "clf__max_depth": [None, 5, 10, 20],
             "clf__min_samples_split": [2, 5],
             "clf__min_samples_leaf": [1, 2]
         }
@@ -92,74 +82,81 @@ modelos = {
     "knn": (
         KNeighborsClassifier(),
         {
-            "clf__n_neighbors": [1, 3, 5, 7],
+            "clf__n_neighbors": [1, 3, 5, 7, 9, 11],
             "clf__weights": ["uniform", "distance"],
-            "clf__p": [1, 2]
+            "clf__p": [1, 2]  # Manhattan (p=1) y Euclídea (p=2)
         }
     ),
     "xgb": (
-        XGBClassifier(eval_metric="logloss"),
+        XGBClassifier(eval_metric="logloss", random_state=42),
         {
-            "clf__n_estimators": [100, 200],
-            "clf__learning_rate": [0.01, 0.03, 0.05],
-            "clf__max_depth": [3, 5],
+            "clf__n_estimators": [100, 200, 300],
+            "clf__learning_rate": [0.04 , 0.05, 0.06, 0.07],
+            "clf__max_depth": [3, 5, 7, 9],
             "clf__subsample": [0.7, 1.0],
             "clf__colsample_bytree": [0.7, 1.0]
         }
     ),
     "et": (
-        ExtraTreesClassifier(class_weight="balanced"),
+        ExtraTreesClassifier(class_weight="balanced", random_state=42),
         {
-            "clf__n_estimators": [100, 200],
-            "clf__max_depth": [None, 5, 10],
+            "clf__n_estimators": [100, 200, 300],
+            "clf__max_depth": [None, 5, 10, 20],
             "clf__min_samples_split": [2, 5],
             "clf__min_samples_leaf": [1, 2]
         }
     ),
+    
     "gb": (
-        GradientBoostingClassifier(),
+        GradientBoostingClassifier(random_state=42),
         {
-            "clf__n_estimators": [100, 200],
-            "clf__learning_rate": [0.01, 0.05],
-            "clf__max_depth": [3, 5]
+            "clf__n_estimators": [100, 200, 300],
+            "clf__learning_rate": [0.01, 0.05, 0.1],
+            "clf__max_depth": [3, 5, 7]
         }
     ),
-    "lgbm": (
-        LGBMClassifier(),
-        {
-            "clf__n_estimators": [100, 200],
-            "clf__learning_rate": [0.01, 0.05],
-            "clf__max_depth": [3, 5, -1],
-            "clf__num_leaves": [15, 31]
-        }
-    ),
+    
+    #"lgbm": (
+     #   LGBMClassifier(),
+      #  {
+       #     "clf__n_estimators": [100, 200, 300],
+        #    "clf__learning_rate": [0.01, 0.03, 0.05, 0.1],
+         #   "clf__max_depth": [3, 5, 7, -1],
+          #  "clf__num_leaves": [15, 31, 63]
+    #    }
+   # ),
+    
     "qda": (
         QuadraticDiscriminantAnalysis(),
-        {"clf__reg_param": [0.0, 0.01, 0.1]}
-    ),
+    {
+        "clf__reg_param": [0.0, 0.01, 0.1, 0.5]
+    }
+),
     "mlp": (
-        MLPClassifier(max_iter=1000),
-        {
-            "clf__hidden_layer_sizes": [(50,), (100,), (100, 50)],
-            "clf__alpha": [0.0001, 0.001, 0.01],
-            "clf__activation": ["relu", "tanh"]
-        }
-    ),
+    MLPClassifier(max_iter=1000, random_state=42),
+    {
+        "clf__hidden_layer_sizes": [(50,), (100,), (100, 50)],
+        "clf__alpha": [0.0001, 0.001, 0.005, 0.01, 0.02 , 0.03],
+        "clf__activation": ["relu", "tanh"]
+    }
+),
+    
     "ada": (
-        AdaBoostClassifier(),
-        {
-            "clf__n_estimators": [50, 100],
-            "clf__learning_rate": [0.01, 0.1, 1.0]
-        }
-    ),
+    AdaBoostClassifier(),
+    {
+        "clf__n_estimators": [50, 100, 200],
+        "clf__learning_rate": [0.01, 0.1, 1.0]
+    }
+),
     "catboost": (
-        CatBoostClassifier(verbose=0),
-        {
-            "clf__iterations": [100, 200],
-            "clf__learning_rate": [0.01, 0.05],
-            "clf__depth": [3, 5]
-        }
-    )
+    CatBoostClassifier(verbose=0, random_state=42),
+    {
+        "clf__iterations": [100, 200],
+        "clf__learning_rate": [0.01, 0.05, 0.1],
+        "clf__depth": [3, 5, 7]
+    }
+)
+
 }
 
 scoring = {
@@ -192,21 +189,21 @@ for archivo_vb in archivos:
         df_basal["ID"] = df_basal["ID"].astype(str)
 
         # Normalizar VB / basal intra-sujeto
-        #X_norm = []
-   #     for sujeto in df_vb["ID"].unique():
-  #          datos_vb = df_vb[df_vb["ID"] == sujeto].drop(columns=["ID", "tipo", "ventana"], errors="ignore")
-   #         datos_basal = df_basal[df_basal["ID"] == sujeto].drop(columns=["ID", "tipo", "ventana"], errors="ignore")
- #           if not datos_basal.empty and not datos_vb.empty:
-   #             media_basal = datos_basal.mean()
-   #             norm = datos_vb / media_basal.replace(0, np.nan)
-  #              norm["ID"] = sujeto
-  #              X_norm.append(norm)
+        X_norm = []
+        for sujeto in df_vb["ID"].unique():
+            datos_vb = df_vb[df_vb["ID"] == sujeto].drop(columns=["ID", "tipo", "ventana"], errors="ignore")
+            datos_basal = df_basal[df_basal["ID"] == sujeto].drop(columns=["ID", "tipo", "ventana"], errors="ignore")
+            if not datos_basal.empty and not datos_vb.empty:
+                media_basal = datos_basal.mean()
+                norm = datos_vb / media_basal.replace(0, np.nan)
+                norm["ID"] = sujeto
+                X_norm.append(norm)
 
-   #     if not X_norm:
-   #         print(f"⚠️ No se pudo normalizar ningún sujeto para {archivo_vb}")
-   #         continue
-#
-    #    df = pd.concat(X_norm, ignore_index=True).dropna(axis=1, how="any")
+        if not X_norm:
+            print(f"⚠️ No se pudo normalizar ningún sujeto para {archivo_vb}")
+            continue
+
+        df = pd.concat(X_norm, ignore_index=True).dropna(axis=1, how="any")
         groups = df["ID"]
         df = df.drop(columns=["ID"])
         #df = df.loc[:, df.columns.str.contains("mean|^ID$")]  # Seleccionar columnas 
@@ -276,7 +273,7 @@ for archivo_vb in archivos:
                 gkf = GroupKFold(n_splits=5)
                 grid = GridSearchCV(
                     pipeline, grid_params,
-                    scoring=scoring, refit="f1_macro",
+                    scoring=scoring, refit="accuracy",
                     cv=gkf.split(X_feat, y, groups),
                     n_jobs=-1, return_train_score=True
                 )
@@ -288,7 +285,7 @@ for archivo_vb in archivos:
                     "archivo": archivo_vb,
                     "feat": nombre_feat,
                     "modelo": nombre,
-                    "f1_macro": grid.best_score_,
+                    "f1_macro": scores["mean_test_f1_macro"][grid.best_index_],
                     "accuracy": scores["mean_test_accuracy"][grid.best_index_],
                     "precision_macro": scores["mean_test_precision_macro"][grid.best_index_],
                     "recall_macro": scores["mean_test_recall_macro"][grid.best_index_],
@@ -306,6 +303,6 @@ for archivo_vb in archivos:
 
 # === GUARDAR RESULTADOS ===
 df_final = pd.DataFrame(filas)
-df_final = df_final.sort_values("f1_macro", ascending=False)
+df_final = df_final.sort_values("accuracy", ascending=False)
 df_final.to_csv(OUTPUT_CSV, index=False)
 print(f"✅ Resultados guardados en {OUTPUT_CSV}")

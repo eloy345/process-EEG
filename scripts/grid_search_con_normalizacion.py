@@ -16,6 +16,8 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import make_scorer, f1_score, accuracy_score, precision_score, recall_score, roc_auc_score
 from sklearn.feature_selection import SelectKBest, f_classif
+import warnings
+warnings.filterwarnings("ignore")
 
 # === CONFIG ===
 CARPETA = "df_EEG/PRE"
@@ -30,22 +32,24 @@ meta.index = meta.index.astype(str)
 # === DEFINIR MODELOS Y GRIDS ===
 modelos = {
     "lr": (
-        LogisticRegression(class_weight="balanced", max_iter=1000),
+        LogisticRegression(class_weight="balanced", max_iter=1000, random_state=42),
         {
             "clf__C": [0.001, 0.01, 0.1, 1, 10, 100],
-            "clf__penalty": ["l1", "l2"],
+            "clf__penalty": ["l1", "l2"],  # podrías incluir "l1" si usas solver='liblinear'
             "clf__solver": ["liblinear", "saga"]
         }
     ),
     "svm": (
         SVC(kernel="linear", class_weight="balanced", probability=True),
-        {"clf__C": [0.001, 0.01, 0.1, 1, 10, 100]}
+        {
+            "clf__C": [0.001, 0.01, 0.1, 1, 10, 100]
+        }
     ),
     "rf": (
-        RandomForestClassifier(class_weight="balanced"),
+        RandomForestClassifier(class_weight="balanced", random_state=42),
         {
-            "clf__n_estimators": [100, 200, 300],
-            "clf__max_depth": [None, 5, 10],
+            "clf__n_estimators": [100, 200, 300, 400, 500],
+            "clf__max_depth": [None, 5, 10, 20],
             "clf__min_samples_split": [2, 5],
             "clf__min_samples_leaf": [1, 2]
         }
@@ -53,74 +57,81 @@ modelos = {
     "knn": (
         KNeighborsClassifier(),
         {
-            "clf__n_neighbors": [1, 3, 5, 7],
+            "clf__n_neighbors": [1, 3, 5, 7, 9, 11],
             "clf__weights": ["uniform", "distance"],
-            "clf__p": [1, 2]
+            "clf__p": [1, 2]  # Manhattan (p=1) y Euclídea (p=2)
         }
     ),
     "xgb": (
-        XGBClassifier(eval_metric="logloss"),
+        XGBClassifier(eval_metric="logloss", random_state=42),
         {
-            "clf__n_estimators": [100, 200],
-            "clf__learning_rate": [0.01, 0.03, 0.05],
-            "clf__max_depth": [3, 5],
+            "clf__n_estimators": [100, 200, 300],
+            "clf__learning_rate": [0.04 , 0.05, 0.06, 0.07],
+            "clf__max_depth": [3, 5, 7, 9],
             "clf__subsample": [0.7, 1.0],
             "clf__colsample_bytree": [0.7, 1.0]
         }
     ),
     "et": (
-        ExtraTreesClassifier(class_weight="balanced"),
+        ExtraTreesClassifier(class_weight="balanced", random_state=42),
         {
-            "clf__n_estimators": [100, 200],
-            "clf__max_depth": [None, 5, 10],
+            "clf__n_estimators": [100, 200, 300],
+            "clf__max_depth": [None, 5, 10, 20],
             "clf__min_samples_split": [2, 5],
             "clf__min_samples_leaf": [1, 2]
         }
     ),
+    
     "gb": (
-        GradientBoostingClassifier(),
+        GradientBoostingClassifier(random_state=42),
         {
-            "clf__n_estimators": [100, 200],
-            "clf__learning_rate": [0.01, 0.05],
-            "clf__max_depth": [3, 5]
+            "clf__n_estimators": [100, 200, 300],
+            "clf__learning_rate": [0.01, 0.05, 0.1],
+            "clf__max_depth": [3, 5, 7]
         }
     ),
-    "lgbm": (
-        LGBMClassifier(),
-        {
-            "clf__n_estimators": [100, 200],
-            "clf__learning_rate": [0.01, 0.05],
-            "clf__max_depth": [3, 5, -1],
-            "clf__num_leaves": [15, 31]
-        }
-    ),
+    
+    #"lgbm": (
+     #   LGBMClassifier(),
+      #  {
+       #     "clf__n_estimators": [100, 200, 300],
+        #    "clf__learning_rate": [0.01, 0.03, 0.05, 0.1],
+         #   "clf__max_depth": [3, 5, 7, -1],
+          #  "clf__num_leaves": [15, 31, 63]
+    #    }
+   # ),
+    
     "qda": (
         QuadraticDiscriminantAnalysis(),
-        {"clf__reg_param": [0.0, 0.01, 0.1]}
-    ),
+    {
+        "clf__reg_param": [0.0, 0.01, 0.1, 0.5]
+    }
+),
     "mlp": (
-        MLPClassifier(max_iter=1000),
-        {
-            "clf__hidden_layer_sizes": [(50,), (100,), (100, 50)],
-            "clf__alpha": [0.0001, 0.001, 0.01],
-            "clf__activation": ["relu", "tanh"]
-        }
-    ),
+    MLPClassifier(max_iter=1000, random_state=42),
+    {
+        "clf__hidden_layer_sizes": [(50,), (100,), (100, 50)],
+        "clf__alpha": [0.0001, 0.001, 0.005, 0.01, 0.02 , 0.03],
+        "clf__activation": ["relu", "tanh"]
+    }
+),
+    
     "ada": (
-        AdaBoostClassifier(),
-        {
-            "clf__n_estimators": [50, 100],
-            "clf__learning_rate": [0.01, 0.1, 1.0]
-        }
-    ),
+    AdaBoostClassifier(),
+    {
+        "clf__n_estimators": [50, 100, 200],
+        "clf__learning_rate": [0.01, 0.1, 1.0]
+    }
+),
     "catboost": (
-        CatBoostClassifier(verbose=0),
-        {
-            "clf__iterations": [100, 200],
-            "clf__learning_rate": [0.01, 0.05],
-            "clf__depth": [3, 5]
-        }
-    )
+    CatBoostClassifier(verbose=0, random_state=42),
+    {
+        "clf__iterations": [100, 200],
+        "clf__learning_rate": [0.01, 0.05, 0.1],
+        "clf__depth": [3, 5, 7]
+    }
+)
+
 }
 
 # === MÉTRICAS ===
@@ -166,7 +177,7 @@ for archivo_vb in archivos:
             continue
 
         df = pd.concat(X_norm, ignore_index=True).dropna(axis=1, how="any")
-        df = df.loc[:, df.columns.str.contains("C|^ID$")]  # Seleccionar columnas 
+        #df = df.loc[:, df.columns.str.contains("C|^ID$")]  # Seleccionar columnas 
         groups = df["ID"]
         df = df.drop(columns=["ID"])
         y = groups.map(meta[COLUMNA_Y]).astype("Int64")
@@ -180,7 +191,7 @@ for archivo_vb in archivos:
             print(f"   🔍 Modelo: {nombre}")
             pipeline = Pipeline([
                 ("scaler", StandardScaler()),
-                ("selectk", SelectKBest(score_func=f_classif, k=100)),
+                #("selectk", SelectKBest(score_func=f_classif, k=100)),
                 #("pca", PCA(n_components=0.9, random_state=42)),
                 ("clf", modelo)
             ])
@@ -197,7 +208,7 @@ for archivo_vb in archivos:
             fila = {
                 "archivo": archivo_vb,
                 "modelo": nombre,
-                "f1_macro": grid.best_score_,
+                "f1_macro": scores["mean_test_f1_macro"][grid.best_index_],
                 "accuracy": scores["mean_test_accuracy"][grid.best_index_],
                 "precision_macro": scores["mean_test_precision_macro"][grid.best_index_],
                 "recall_macro": scores["mean_test_recall_macro"][grid.best_index_],

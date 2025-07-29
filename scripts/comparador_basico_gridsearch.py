@@ -36,10 +36,10 @@ meta.index = meta.index.astype(str)
 # === DEFINIR MODELOS Y GRIDS ===
 modelos = {
     "lr": (
-        LogisticRegression(class_weight="balanced", max_iter=1000),
+        LogisticRegression(class_weight="balanced", max_iter=1000, random_state=42),
         {
             "clf__C": [0.001, 0.01, 0.1, 1, 10, 100],
-            "clf__penalty": ["l1", "l2"],  # podrías incluir "l1" si usas solver='liblinear'
+            "clf__penalty": ["l1", "l2"],  
             "clf__solver": ["liblinear", "saga"]
         }
     ),
@@ -50,7 +50,7 @@ modelos = {
         }
     ),
     "rf": (
-        RandomForestClassifier(class_weight="balanced"),
+        RandomForestClassifier(class_weight="balanced", random_state=42),
         {
             "clf__n_estimators": [100, 200, 300, 400, 500],
             "clf__max_depth": [None, 5, 10, 20],
@@ -61,23 +61,23 @@ modelos = {
     "knn": (
         KNeighborsClassifier(),
         {
-            "clf__n_neighbors": [1, 3, 5, 7, 9, 11, 13, 15],
+            "clf__n_neighbors": [1, 3, 5, 7, 9],
             "clf__weights": ["uniform", "distance"],
-            "clf__p": [1, 2]  # Manhattan (p=1) y Euclídea (p=2)
+            "clf__p": [1, 2] 
         }
     ),
     "xgb": (
-        XGBClassifier(eval_metric="logloss"),
+        XGBClassifier(eval_metric="logloss", random_state=42),
         {
             "clf__n_estimators": [100, 200, 300],
-            "clf__learning_rate": [0.01, 0.03, 0.04 , 0.05, 0.06, 0.07],
+            "clf__learning_rate": [0.04 , 0.05, 0.06, 0.07],
             "clf__max_depth": [3, 5, 7, 9],
             "clf__subsample": [0.7, 1.0],
             "clf__colsample_bytree": [0.7, 1.0]
         }
     ),
     "et": (
-        ExtraTreesClassifier(class_weight="balanced"),
+        ExtraTreesClassifier(class_weight="balanced", random_state=42),
         {
             "clf__n_estimators": [100, 200, 300],
             "clf__max_depth": [None, 5, 10, 20],
@@ -87,7 +87,7 @@ modelos = {
     ),
     
     "gb": (
-        GradientBoostingClassifier(),
+        GradientBoostingClassifier( random_state=42),
         {
             "clf__n_estimators": [100, 200, 300],
             "clf__learning_rate": [0.01, 0.05, 0.1],
@@ -96,12 +96,12 @@ modelos = {
     ),
     
     #"lgbm": (
-     #   LGBMClassifier(),
-      #  {
-       #     "clf__n_estimators": [100, 200, 300],
-        #    "clf__learning_rate": [0.01, 0.03, 0.05, 0.1],
-         #   "clf__max_depth": [3, 5, 7, -1],
-          #  "clf__num_leaves": [15, 31, 63]
+    #   LGBMClassifier(, random_state=42),
+    #  {
+    #     "clf__n_estimators": [100, 200, 300],
+    #    "clf__learning_rate": [0.01, 0.03, 0.05, 0.1],
+    #   "clf__max_depth": [3, 5, 7, -1],
+    #  "clf__num_leaves": [15, 31, 63]
     #    }
    # ),
     
@@ -112,7 +112,7 @@ modelos = {
     }
 ),
     "mlp": (
-    MLPClassifier(max_iter=1000),
+    MLPClassifier(max_iter=1000, random_state=42),
     {
         "clf__hidden_layer_sizes": [(50,), (100,), (100, 50)],
         "clf__alpha": [0.0001, 0.001, 0.005, 0.01, 0.02 , 0.03],
@@ -121,14 +121,14 @@ modelos = {
 ),
     
     "ada": (
-    AdaBoostClassifier(),
+    AdaBoostClassifier( random_state=42),
     {
         "clf__n_estimators": [50, 100, 200],
         "clf__learning_rate": [0.01, 0.1, 1.0]
     }
 ),
     "catboost": (
-    CatBoostClassifier(verbose=0),
+    CatBoostClassifier(verbose=0, random_state=42),
     {
         "clf__iterations": [100, 200],
         "clf__learning_rate": [0.01, 0.05, 0.1],
@@ -157,8 +157,9 @@ for archivo in archivos:
     try:
         df = pd.read_csv(ruta)
         groups = df["ID"].astype(str)
+        df = df.sort_values("ID")
         df = df.drop(columns=["ID", "tipo", "ventana"], errors="ignore")
-        df = df.loc[:, df.columns.str.contains("F|^ID$")]  # Seleccionar columnas 
+        #df = df.loc[:, df.columns.str.contains("F|^ID$")]  # Seleccionar columnas 
         y = groups.map(meta[COLUMNA_Y])
         mask = y.notna()
         X = df[mask]
@@ -186,7 +187,7 @@ for archivo in archivos:
             fila = {
                 "archivo": archivo,
                 "modelo": nombre,
-                "f1_macro": grid.best_score_,
+                "f1_macro": scores["mean_test_f1_macro"][grid.best_index_],
                 "accuracy": scores["mean_test_accuracy"][grid.best_index_],
                 "precision_macro": scores["mean_test_precision_macro"][grid.best_index_],
                 "recall_macro": scores["mean_test_recall_macro"][grid.best_index_],
